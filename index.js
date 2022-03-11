@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const axios = require('axios');
+const express = require('express');
 const nodemailer = require("nodemailer");
 const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
@@ -168,4 +169,6 @@ async function main() {
 
 main();
 
-
+// Define a port for Heroku to work on
+const PORT = process.env.PORT || 5000;
+express().listen(PORT, () => logInfo(`Listening on port ${PORT}.`));
