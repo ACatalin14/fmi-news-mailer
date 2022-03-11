@@ -163,12 +163,10 @@ async function main() {
     const initialCompletionStudies = await getWebsite(STUDIES_COMPLETION_URL);
     studiesCompletionConfig.lastDOM = new JSDOM(initialCompletionStudies);
     setInterval(checkWebsite, HALF_DAY, studiesCompletionConfig);
-
-    setInterval(sendMail, 5 * 60 * 1000, 'Test', 'This is a <strong>test</strong>');
 }
 
 main();
 
-// Define a port for Heroku to work on
+// Define a port for Heroku to listen to
 const PORT = process.env.PORT || 5000;
 express().listen(PORT, () => logInfo(`Listening on port ${PORT}.`));
