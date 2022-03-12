@@ -8,6 +8,8 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const ANNOUNCEMENTS_URL = 'https://fmi.unibuc.ro/category/anunturi-secretariat/';
 const STUDIES_COMPLETION_URL = 'https://fmi.unibuc.ro/finalizare-studii/';
+const START_DELAY = parseInt(Math.random() * 10 * 1000);
+
 let mongoClient;
 
 const secretaryAnnouncementsConfig = {
@@ -203,14 +205,16 @@ async function connectToMongoDb() {
 }
 
 async function main() {
-
-    await connectToMongoDb();
-
-    await checkWebsite(secretaryAnnouncementsConfig)
-
-    await checkWebsite(studiesCompletionConfig);
+    try {
+        await connectToMongoDb();
+        await checkWebsite(secretaryAnnouncementsConfig)
+        await checkWebsite(studiesCompletionConfig);
+    } catch (err) {
+        console.error(err);
+    } finally {
+        mongoClient.close();
+    }
 }
 
-main()
-    .catch(console.error)
-    .finally(() => mongoClient.close());
+// Start with a random delay (at most 10 mins)
+setTimeout(main, START_DELAY);
