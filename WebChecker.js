@@ -47,9 +47,11 @@ async function checkWebsite(websiteConfig, retryCount = 5) {
     }
 
     if (lastDOM === null) {
-        logInfo(`Stopped trying DOM fetch from DB for ${websiteConfig.subjectEng}.`)
+        logInfo(`Stopped trying DOM fetch from DB for ${websiteConfig.subjectEng}.`);
         return;
     }
+
+    logInfo(`Successfully fetched old DOM for ${websiteConfig.mongoDomName}.`);
 
     if (!currentDOM && retryCount > 0) {
         setTimeout(checkWebsite, 10 * 1000, retryCount - 1);
@@ -85,7 +87,7 @@ async function getWebsite(url) {
     const response = await axios.get(url);
 
     if (response.status === 200) {
-        logInfo('Successfully received response.')
+        logInfo(`Successfully received response from ${url}.`)
         return new JSDOM(response.data);
     }
 
@@ -173,7 +175,7 @@ function domsHaveSameParagraphs(oldDom, newDom) {
 }
 
 function getNewParagraphsAndHeaders(oldDom, newDom) {
-    const newFirstHeader = oldDom.window.document.querySelector('.entry-content h2');
+    const newFirstHeader = newDom.window.document.querySelector('.entry-content h2');
     let newDiffs = `<a href="${STUDIES_COMPLETION_URL}">` + newFirstHeader.outerHTML + '</a>';
 
     const oldDomParagraphs = Array.from(oldDom.window.document.querySelectorAll('.entry-content p'));
