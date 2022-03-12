@@ -113,7 +113,7 @@ async function getDomFromMongo(domName) {
 
 async function saveCurrentDomInDatabase(domName, dom) {
     const doms = mongoClient.db("fmi-news").collection("doms");
-    await doms.updateOne({ name: domName }, { $set: { dom: dom.outerHTML } });
+    await doms.updateOne({ name: domName }, { $set: { dom: dom.window.document.documentElement.outerHTML } });
 }
 
 async function sendMail(subject, htmlContent) {
