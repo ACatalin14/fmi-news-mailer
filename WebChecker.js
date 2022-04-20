@@ -11,6 +11,7 @@ const STUDIES_COMPLETION_URL = 'https://fmi.unibuc.ro/finalizare-studii/';
 const START_DELAY = parseInt(Math.random() * 10 * 1000);
 
 let mongoClient;
+let checkedWebsites = [];
 
 const secretaryAnnouncementsConfig = {
     subjectEng: 'Secretary Announcements',
@@ -49,24 +50,34 @@ async function checkWebsite(websiteConfig, retryCount = 5) {
     }
 
     if (lastDOM === null) {
-        logInfo(`Stopped trying DOM fetch from DB for ${websiteConfig.subjectEng}.`);
+        logInfo(`Could not fetch old DOM for ${websiteConfig.subjectEng}.`);
+        if (retryCount > 0) {
+            logInfo('Trying again in 10 seconds...');
+            setTimeout(checkWebsite, 10 * 1000, websiteConfig, retryCount - 1);
+        } else {
+            logInfo('Hit the request limit. Trying again next time.');
+            await afterDoneCheckingTheWebsite(websiteConfig);
+        }
         return;
     }
 
     logInfo(`Successfully fetched old DOM for ${websiteConfig.mongoDomName}.`);
 
-    if (!currentDOM && retryCount > 0) {
-        setTimeout(checkWebsite, 10 * 1000, retryCount - 1);
-        return;
-    }
-
-    if (!currentDOM && !retryCount) {
-        logInfo('Hit the request limit. Trying again next time.');
+    if (currentDOM === null) {
+        logInfo(`Could not fetch website's dom for ${websiteConfig.subjectEng}.`);
+        if (retryCount > 0) {
+            logInfo('Trying again in 10 seconds...');
+            setTimeout(checkWebsite, 10 * 1000, websiteConfig, retryCount - 1);
+        } {
+            logInfo('Hit the request limit. Trying again next time.');
+            await afterDoneCheckingTheWebsite(websiteConfig);
+        }
         return;
     }
 
     if (websiteConfig.websiteRemainsTheSame(lastDOM, currentDOM)) {
         logInfo(`No updates detected for ${websiteConfig.subjectEng}. Checking next time.`);
+        await afterDoneCheckingTheWebsite(websiteConfig);
         return;
     }
 
@@ -82,6 +93,16 @@ async function checkWebsite(websiteConfig, retryCount = 5) {
     } catch (err) {
         logInfo(`Error occurred while saving the current DOM for ${websiteConfig.subjectEng}.`);
         console.error(err);
+    } finally {
+        await afterDoneCheckingTheWebsite(websiteConfig);
+    }
+}
+
+async function afterDoneCheckingTheWebsite(websiteConfig) {
+    checkedWebsites.push(websiteConfig.subjectEng);
+
+    if (checkedWebsites.length === 2) {
+        await mongoClient.close();
     }
 }
 
@@ -109,8 +130,6 @@ async function getDomFromMongo(domName) {
         console.error(`Error occurred while fetching DOM for ${domName} from database.`);
         return null;
     }
-
-
 }
 
 async function saveCurrentDomInDatabase(domName, dom) {
@@ -148,6 +167,9 @@ async function sendMail(subject, htmlContent) {
 function domsHaveSameArticles(oldDom, newDom) {
     const oldArticles = oldDom.window.document.querySelectorAll('article');
     const newArticles = newDom.window.document.querySelectorAll('article');
+
+    logInfo(oldArticles);
+    logInfo(newArticles);
 
     return JSON.stringify(oldArticles) === JSON.stringify(newArticles);
 }
@@ -211,8 +233,6 @@ async function main() {
         await checkWebsite(studiesCompletionConfig);
     } catch (err) {
         console.error(err);
-    } finally {
-        mongoClient.close();
     }
 }
 
