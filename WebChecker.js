@@ -179,9 +179,6 @@ function domsHaveSameArticles(oldDom, newDom) {
     const oldArticleIds = oldArticles.map(article => article.id);
     const newArticleIds = newArticles.map(article => article.id);
 
-    logInfo(oldArticleIds);
-    logInfo(newArticleIds);
-
     return JSON.stringify(oldArticleIds) === JSON.stringify(newArticleIds);
 }
 
@@ -248,4 +245,4 @@ async function main() {
 }
 
 // Start with a random delay (at most 10 mins)
-setTimeout(main, 1000);
+setTimeout(main, START_DELAY);
