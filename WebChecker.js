@@ -8,7 +8,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const ANNOUNCEMENTS_URL = 'https://fmi.unibuc.ro/category/anunturi-secretariat/';
 const STUDIES_COMPLETION_URL = 'https://fmi.unibuc.ro/finalizare-studii/';
-const START_DELAY = parseInt(Math.random() * 10 * 1000);
+const START_DELAY = parseInt(Math.random() * 10 * 60 * 1000);
 
 let mongoClient;
 let checkedWebsites = [];
@@ -134,7 +134,16 @@ async function getDomFromMongo(domName) {
 
 async function saveCurrentDomInDatabase(domName, dom) {
     const doms = mongoClient.db("fmi-news").collection("doms");
-    await doms.updateOne({ name: domName }, { $set: { dom: dom.window.document.documentElement.outerHTML } });
+
+    await doms.updateOne(
+        { name: domName },
+        {
+            $set: {
+                dom: dom.window.document.documentElement.outerHTML,
+                updatedAt: new Date()
+            }
+        }
+    );
 }
 
 async function sendMail(subject, htmlContent) {
@@ -165,13 +174,15 @@ async function sendMail(subject, htmlContent) {
 }
 
 function domsHaveSameArticles(oldDom, newDom) {
-    const oldArticles = oldDom.window.document.querySelectorAll('article');
-    const newArticles = newDom.window.document.querySelectorAll('article');
+    const oldArticles = Array.from(oldDom.window.document.querySelectorAll('article'));
+    const newArticles = Array.from(newDom.window.document.querySelectorAll('article'));
+    const oldArticleIds = oldArticles.map(article => article.id);
+    const newArticleIds = newArticles.map(article => article.id);
 
-    logInfo(oldArticles);
-    logInfo(newArticles);
+    logInfo(oldArticleIds);
+    logInfo(newArticleIds);
 
-    return JSON.stringify(oldArticles) === JSON.stringify(newArticles);
+    return JSON.stringify(oldArticleIds) === JSON.stringify(newArticleIds);
 }
 
 function getNewSecretaryArticles(oldDom, newDom) {
@@ -237,4 +248,4 @@ async function main() {
 }
 
 // Start with a random delay (at most 10 mins)
-setTimeout(main, START_DELAY);
+setTimeout(main, 1000);
