@@ -8,6 +8,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const ANNOUNCEMENTS_URL = 'https://fmi.unibuc.ro/category/anunturi-secretariat/';
 const STUDIES_COMPLETION_URL = 'https://fmi.unibuc.ro/finalizare-studii/';
+const NEWS_URL = 'https://fmi.unibuc.ro/category/noutati/';
 const START_DELAY = parseInt(Math.random() * 10 * 60 * 1000);
 
 let mongoClient;
@@ -19,7 +20,7 @@ const secretaryAnnouncementsConfig = {
     url: ANNOUNCEMENTS_URL,
     mongoDomName: 'secretaryAnnouncements',
     websiteRemainsTheSame: domsHaveSameArticles,
-    getMailContentHTML: getNewSecretaryArticles,
+    getMailContentHTML: getNewDifferentArticles,
 };
 
 const studiesCompletionConfig = {
@@ -29,6 +30,15 @@ const studiesCompletionConfig = {
     mongoDomName: 'studiesCompletion',
     websiteRemainsTheSame: domsHaveSameParagraphs,
     getMailContentHTML: getNewParagraphsAndHeaders,
+};
+
+const newsConfig = {
+    subjectEng: 'News',
+    subjectRo: 'Noutati',
+    url: NEWS_URL,
+    mongoDomName: 'news',
+    websiteRemainsTheSame: domsHaveSameArticles,
+    getMailContentHTML: getNewDifferentArticles,
 };
 
 
@@ -182,7 +192,7 @@ function domsHaveSameArticles(oldDom, newDom) {
     return JSON.stringify(oldArticleIds) === JSON.stringify(newArticleIds);
 }
 
-function getNewSecretaryArticles(oldDom, newDom) {
+function getNewDifferentArticles(oldDom, newDom) {
     const oldArticles = oldDom.window.document.querySelectorAll('article');
     const newArticles = newDom.window.document.querySelectorAll('article');
     const oldArticleIds = Array.from(oldArticles).map(oldArticle => oldArticle.id);
@@ -239,6 +249,7 @@ async function main() {
         await connectToMongoDb();
         await checkWebsite(secretaryAnnouncementsConfig)
         await checkWebsite(studiesCompletionConfig);
+        await checkWebsite(newsConfig);
     } catch (err) {
         console.error(err);
     }
